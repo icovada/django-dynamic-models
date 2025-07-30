@@ -79,10 +79,10 @@ class ChangeLogMixin(models.Model):
                 null=True
             ),
             'target_uuid': models.UUIDField(), # needed to we can keep the information after deletion
-            'changelog': models.ForeignKey(
+            'changelog': models.OneToOneField(
                 ChangeLog,
                 on_delete=models.CASCADE,
-                related_name=f'{target_model_name}_relations'
+                related_name=f'{target_model_name}'
             ),
         }
 

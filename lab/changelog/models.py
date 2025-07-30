@@ -29,3 +29,7 @@ class ChangeLog(models.Model):
 
     def __str__(self):
         return f"{self.action} at {self.timestamp}"
+    
+    @property
+    def object_changelog(self):
+        return getattr(self, self.object_type)
