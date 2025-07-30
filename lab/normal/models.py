@@ -1,9 +1,11 @@
 from django.db import models
 from django.db.models import CheckConstraint
+from uuid import uuid4
 
 from changelog.mixins import ChangeLogMixin
 
 class Cable(ChangeLogMixin, models.Model):
+    id = models.UUIDField(default=uuid4, primary_key=True)
     color = models.CharField(max_length=20)
     side_a = models.ForeignKey(
         'DataSocket', on_delete=models.CASCADE, related_name='+', null=True, blank=False)
@@ -23,6 +25,7 @@ class Cable(ChangeLogMixin, models.Model):
 
 
 class Device(ChangeLogMixin, models.Model):
+    id = models.UUIDField(default=uuid4, primary_key=True)
     name = models.CharField(max_length=30)
 
     def __str__(self) -> str:
@@ -30,6 +33,7 @@ class Device(ChangeLogMixin, models.Model):
 
 
 class DataSocket(models.Model):
+    id = models.UUIDField(default=uuid4, primary_key=True)
     virtual = models.BooleanField()
     cable = models.ManyToManyField(
         to='self',
@@ -49,7 +53,6 @@ class DataSocket(models.Model):
 
 
 class Interface(ChangeLogMixin, DataSocket):
-
     def __str__(self) -> str:
         return self.name
 

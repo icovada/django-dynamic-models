@@ -73,6 +73,7 @@ class ChangeLogMixin(models.Model):
                 on_delete=models.CASCADE,
                 related_name='change_logs'
             ),
+            'target_uuid': models.UUIDField(), # needed to we can keep the information after deletion
             'changelog': models.ForeignKey(
                 ChangeLog,
                 on_delete=models.CASCADE,
@@ -143,7 +144,8 @@ class ChangeLogMixin(models.Model):
             rel_model.objects.create(
                 **{
                     cls.__name__.lower(): instance,
-                    'changelog': changelog
+                    'changelog': changelog,
+                    'target_uuid': instance.id
                 }
             )
 
@@ -177,8 +179,10 @@ class ChangeLogMixin(models.Model):
             # Handle different field types
             if isinstance(field, models.DateTimeField) and value:
                 data[field.name] = value.isoformat()
+            elif isinstance(field, models.UUIDField) and value:
+                data[field.name] = str(value)
             elif isinstance(field, models.ForeignKey) and value:
-                data[field.name] = value.pk
+                data[field.name] = str(value.pk)
             elif hasattr(value, 'pk'):
                 data[field.name] = value.pk
             else:

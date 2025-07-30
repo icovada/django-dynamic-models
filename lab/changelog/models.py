@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from uuid import uuid4
 
 User = get_user_model()
 
@@ -11,6 +12,7 @@ class ChangeLog(models.Model):
         ('DELETE', 'Deleted'),
     ]
 
+    id = models.UUIDField(default=uuid4, primary_key=True)
     action = models.CharField(max_length=10, choices=ACTION_CHOICES)
     timestamp = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(
