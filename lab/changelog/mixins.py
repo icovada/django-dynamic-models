@@ -58,6 +58,10 @@ class ChangeLogMixin(models.Model):
             return
         except LookupError:
             pass
+        
+        # Get name of object model this changelog refers to
+        # eg. this is a DeviceChangeLog, we want normal_device
+        target_model_name = f"{cls._meta.app_label}_{cls.__name__}".lower()
 
         # Import ChangeLog here to avoid circular imports
         from .models import ChangeLog
@@ -68,7 +72,7 @@ class ChangeLogMixin(models.Model):
             'Meta': type('Meta', (), {
                 'app_label': cls._meta.app_label,
             }),
-            cls.__name__.lower(): models.ForeignKey(
+            'fktarget': models.ForeignKey(
                 cls,
                 on_delete=models.SET_NULL,
                 related_name='change_logs',
@@ -78,7 +82,7 @@ class ChangeLogMixin(models.Model):
             'changelog': models.ForeignKey(
                 ChangeLog,
                 on_delete=models.CASCADE,
-                related_name=f'{cls.__name__.lower()}_relations'
+                related_name=f'{target_model_name}_relations'
             ),
         }
 
@@ -113,6 +117,8 @@ class ChangeLogMixin(models.Model):
         @receiver(post_save, sender=cls, weak=False)
         def post_save_handler(sender, instance, created, **kwargs):
             from .models import ChangeLog
+            
+            target_model_name = f"{cls._meta.app_label}_{cls.__name__}".lower()
 
             # Get user from thread local if available
             user = getattr(_thread_local, 'user', None)
@@ -137,16 +143,17 @@ class ChangeLogMixin(models.Model):
                 user=user,
                 old_values=old_values,
                 new_values=new_values,
-                changed_fields=changed_fields
+                changed_fields=changed_fields,
+                object_type=target_model_name
             )
 
             # Get the relationship model and create the relationship
             rel_model = cls._get_changelog_rel_model()
             rel_model.objects.create(
                 **{
-                    cls.__name__.lower(): instance,
+                    'fktarget': instance,
                     'changelog': changelog,
-                    'target_uuid': instance.id
+                    'target_uuid': instance.id,
                 }
             )
 
