@@ -70,8 +70,9 @@ class ChangeLogMixin(models.Model):
             }),
             cls.__name__.lower(): models.ForeignKey(
                 cls,
-                on_delete=models.CASCADE,
-                related_name='change_logs'
+                on_delete=models.SET_NULL,
+                related_name='change_logs',
+                null=True
             ),
             'target_uuid': models.UUIDField(), # needed to we can keep the information after deletion
             'changelog': models.ForeignKey(
@@ -163,8 +164,15 @@ class ChangeLogMixin(models.Model):
                 new_values=None,
                 changed_fields=None
             )
-
-            # Note: The relationship will be deleted automatically due to CASCADE
+            
+            # Get the relationship model and create the relationship
+            rel_model: models.Model | type[_] = cls._get_changelog_rel_model()
+            rel_model.objects.create(
+                **{
+                    'changelog': changelog,
+                    'target_uuid': instance.id
+                }
+            )
 
     @classmethod
     def _serialize_instance(cls, instance):
@@ -177,7 +185,9 @@ class ChangeLogMixin(models.Model):
             value = getattr(instance, field.name)
 
             # Handle different field types
-            if isinstance(field, models.DateTimeField) and value:
+            if field.name == "id":
+                continue
+            elif isinstance(field, models.DateTimeField) and value:
                 data[field.name] = value.isoformat()
             elif isinstance(field, models.UUIDField) and value:
                 data[field.name] = str(value)
