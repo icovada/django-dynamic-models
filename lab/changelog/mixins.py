@@ -78,15 +78,10 @@ class ChangeLogMixin(models.Model):
                 related_name='change_logs',
                 null=True
             ),
-            'target_uuid': models.UUIDField(), # needed to we can keep the information after deletion
-            'changelog': models.OneToOneField(
-                ChangeLog,
-                on_delete=models.CASCADE,
-                related_name=f'{target_model_name}'
-            ),
+            'target_uuid': models.UUIDField()
         }
 
-        rel_model = type(rel_model_name, (models.Model,), attrs)
+        rel_model = type(rel_model_name, (ChangeLog,), attrs)
         admin.site.register(rel_model)
 
         # Store reference to the relationship model
@@ -138,23 +133,15 @@ class ChangeLogMixin(models.Model):
                     old_instance, instance)
 
             # Create the ChangeLog entry
-            changelog = ChangeLog.objects.create(
+            rel_model = cls._get_changelog_rel_model()
+            changelog = rel_model.objects.create(
                 action=action,
                 user=user,
                 old_values=old_values,
                 new_values=new_values,
                 changed_fields=changed_fields,
-                object_type=target_model_name
-            )
-
-            # Get the relationship model and create the relationship
-            rel_model = cls._get_changelog_rel_model()
-            rel_model.objects.create(
-                **{
-                    'fktarget': instance,
-                    'changelog': changelog,
-                    'target_uuid': instance.id,
-                }
+                fktarget=instance,
+                target_uuid=instance.id
             )
 
         @receiver(post_delete, sender=cls, weak=False)
@@ -164,22 +151,16 @@ class ChangeLogMixin(models.Model):
             user = getattr(_thread_local, 'user', None)
 
             # Create the ChangeLog entry for deletion
-            changelog = ChangeLog.objects.create(
+            rel_model: models.Model | type[_] = cls._get_changelog_rel_model()
+            changelog = rel_model.objects.create(
                 action='DELETE',
                 user=user,
                 old_values=cls._serialize_instance(instance),
                 new_values=None,
-                changed_fields=None
+                changed_fields=None,
+                target_uuid=instance.id
             )
             
-            # Get the relationship model and create the relationship
-            rel_model: models.Model | type[_] = cls._get_changelog_rel_model()
-            rel_model.objects.create(
-                **{
-                    'changelog': changelog,
-                    'target_uuid': instance.id
-                }
-            )
 
     @classmethod
     def _serialize_instance(cls, instance):

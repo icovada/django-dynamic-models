@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from uuid import uuid4
-from django.contrib.contenttypes.models import ContentType
+from model_utils.managers import InheritanceManager
 
 User = get_user_model()
 
@@ -21,15 +21,11 @@ class ChangeLog(models.Model):
     old_values = models.JSONField(null=True, blank=True)
     new_values = models.JSONField(null=True, blank=True)
     changed_fields = models.JSONField(null=True, blank=True)
-    # This should be a Foreign Key to ObjectType but we'll keep it a string to avoid one db call
-    object_type = models.CharField(max_length=50, null=False, blank=False) 
+    objects = InheritanceManager()
 
     class Meta:
         ordering = ['-timestamp']
 
     def __str__(self):
         return f"{self.action} at {self.timestamp}"
-    
-    @property
-    def object_changelog(self):
-        return getattr(self, self.object_type)
+
