@@ -61,7 +61,7 @@ class ChangeLogMixin(models.Model):
         
         # Get name of object model this changelog refers to
         # eg. this is a DeviceChangeLog, we want normal_device
-        target_model_name = f"{cls._meta.app_label}_{cls.__name__}".lower()
+        target_model_name = f"{cls._meta.app_label}_{cls.__name__}changelog".lower()
 
         # Import ChangeLog here to avoid circular imports
         from .models import ChangeLog
@@ -72,6 +72,12 @@ class ChangeLogMixin(models.Model):
             'Meta': type('Meta', (), {
                 'app_label': cls._meta.app_label,
             }),
+            'changelog_ptr': models.OneToOneField(
+                ChangeLog,
+                on_delete=models.CASCADE,
+                parent_link=True,
+                related_name=target_model_name
+            ),
             'fktarget': models.ForeignKey(
                 cls,
                 on_delete=models.SET_NULL,
@@ -111,9 +117,8 @@ class ChangeLogMixin(models.Model):
 
         @receiver(post_save, sender=cls, weak=False)
         def post_save_handler(sender, instance, created, **kwargs):
-            from .models import ChangeLog
             
-            target_model_name = f"{cls._meta.app_label}_{cls.__name__}".lower()
+            target_model_name = f"{cls._meta.app_label}_{cls.__name__}changelog".lower()
 
             # Get user from thread local if available
             user = getattr(_thread_local, 'user', None)
@@ -141,14 +146,15 @@ class ChangeLogMixin(models.Model):
                 new_values=new_values,
                 changed_fields=changed_fields,
                 fktarget=instance,
-                target_uuid=instance.id
+                target_uuid=instance.id,
+                target_model_name=target_model_name,
             )
 
         @receiver(post_delete, sender=cls, weak=False)
         def post_delete_handler(sender, instance, **kwargs):
-            from .models import ChangeLog
-
             user = getattr(_thread_local, 'user', None)
+
+            target_model_name = f"{cls._meta.app_label}_{cls.__name__}changelog".lower()
 
             # Create the ChangeLog entry for deletion
             rel_model: models.Model | type[_] = cls._get_changelog_rel_model()
@@ -158,7 +164,8 @@ class ChangeLogMixin(models.Model):
                 old_values=cls._serialize_instance(instance),
                 new_values=None,
                 changed_fields=None,
-                target_uuid=instance.id
+                target_uuid=instance.id,
+                target_model_name=target_model_name,
             )
             
 

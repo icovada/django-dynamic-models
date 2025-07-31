@@ -22,6 +22,8 @@ class ChangeLog(models.Model):
     new_values = models.JSONField(null=True, blank=True)
     changed_fields = models.JSONField(null=True, blank=True)
     objects = InheritanceManager()
+    target_model_name = models.CharField(
+        max_length=30, blank=False, null=False)
 
     class Meta:
         ordering = ['-timestamp']
