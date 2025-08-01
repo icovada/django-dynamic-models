@@ -1,12 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from uuid import uuid4
-from .utils.managers import FastInheritanceManager
+from .utils.models import ChangeLoggedModel
 
 User = get_user_model()
 
 
-class ChangeLog(models.Model):
+class ChangeLog(ChangeLoggedModel, models.Model):
     ACTION_CHOICES = [
         ('CREATE', 'Created'),
         ('UPDATE', 'Updated'),
@@ -23,7 +23,6 @@ class ChangeLog(models.Model):
     changed_fields = models.JSONField(null=True, blank=True)
     target_model_name = models.CharField(
         max_length=30, blank=False, null=False)
-    objects = FastInheritanceManager()
 
     class Meta:
         ordering = ['-timestamp']
