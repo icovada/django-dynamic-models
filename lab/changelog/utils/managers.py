@@ -57,3 +57,20 @@ class FastInheritanceManager(FastInheritanceManagerMixin, InheritanceManager):
 
     def values(self, *args: Any, **kwargs: Any) -> Any:
         return self.select_subclasses().values(*args, **kwargs)
+
+    def select_related(self, *fields: Any) -> InheritanceQuerySet:
+        if "fktarget" in fields:
+
+            fields = []
+            # Cycle through all model fields
+            for field in self.model._meta.get_fields():
+                # Skip non-relation fields
+                if not field.is_relation:
+                    continue
+                
+                # If this is a relation field and it has a related model
+                if issubclass(field.related_model, self.model):
+                    fields.append(field.name)
+                    
+        
+        return super().select_related(*fields)
