@@ -42,6 +42,9 @@ class FastInheritanceManager(FastInheritanceManagerMixin, InheritanceManager):
 
     def filter(self, *args: Any, **kwargs: Any) -> InheritanceQuerySet:
         return super().filter(*args, **kwargs).select_subclasses()
+    
+    def exclude(self, *args: Any, **kwargs: Any) -> InheritanceQuerySet:
+        return super().exclude(*args, **kwargs).select_subclasses()
 
     def get(self, *args: Any, **kwargs: Any) -> Any:
         return self._find_subclass(super().get(*args, **kwargs))
@@ -51,3 +54,6 @@ class FastInheritanceManager(FastInheritanceManagerMixin, InheritanceManager):
 
     def last(self, *args: Any, **kwargs: Any) -> Any:
         return self._find_subclass(super().last(*args, **kwargs))
+
+    def values(self, *args: Any, **kwargs: Any) -> Any:
+        return self.select_subclasses().values(*args, **kwargs)
