@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from uuid import uuid4
-from model_utils.managers import InheritanceManager
+from .utils.managers import FastInheritanceManager
 
 User = get_user_model()
 
@@ -21,9 +21,9 @@ class ChangeLog(models.Model):
     old_values = models.JSONField(null=True, blank=True)
     new_values = models.JSONField(null=True, blank=True)
     changed_fields = models.JSONField(null=True, blank=True)
-    objects = InheritanceManager()
     target_model_name = models.CharField(
         max_length=30, blank=False, null=False)
+    objects = FastInheritanceManager()
 
     class Meta:
         ordering = ['-timestamp']
